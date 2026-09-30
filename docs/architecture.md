@@ -1,208 +1,287 @@
-# Customer Voice AI — System Architecture Specification
+# VoiceIQ — Technical System Architecture Specification
 
-## 1. Executive Summary
-
-**Customer Voice AI** is an enterprise-grade, event-driven Customer Voice Intelligence Platform designed for financial services (demonstrated using the fictional institution **Acme Financial**).
-
-The platform transforms high-volume, unstructured customer feedback into prioritized, evidence-backed operational insights:
-```
-Raw Review → AI Analysis → Vector Embedding → Semantic Clustering → Trend & Velocity Detection → Root-Cause Investigation → Team Routing → Human-in-the-Loop Review → Executive Intelligence Report
-```
+> **Document Version:** 1.1.0  
+> **Status:** Active / Production-Ready  
+> **Audience:** Software Engineers, System Architects, DevOps, Technical Leads  
 
 ---
 
-## 2. High-Level Architecture Diagram
+## 1. System Overview & Technical Objectives
+
+**VoiceIQ** is an enterprise-grade, event-driven customer voice intelligence and remediation platform. It ingests high-volume, unstructured multi-channel customer reviews, performs structured AI extraction, clusters semantically similar issues using dense vector embeddings, detects volume velocity surges via statistical baseline comparisons, runs multi-agent root-cause investigations, deterministically routes issues to department queues, and enforces human-in-the-loop governance.
+
+### Core Non-Functional Requirements
+- **High Ingestion Throughput:** Asynchronous non-blocking review ingestion decoupled via Apache Kafka.
+- **Low Latency Semantic Search:** Sub-millisecond approximate nearest neighbor (ANN) vector retrieval via PostgreSQL `pgvector` with HNSW indexing.
+- **Resilience & Local Autonomy:** Transparent fallback to in-memory asynchronous queues when external Kafka brokers are unavailable, enabling offline development and fast CI/CD runs.
+- **Responsible AI Compliance:** Hard boundary separating ground-truth customer evidence from unverified engineering hypotheses.
+- **Auditability:** Complete decision lineage for every AI recommendation approved, modified, or rejected by human operators.
+
+---
+
+## 2. High-Level Architecture Topology
 
 ```mermaid
 flowchart TD
-    subgraph Sources["Customer Voice Ingestion Sources"]
-        S1["Google Reviews"]
-        S2["App Store / Play Store"]
-        S3["Yelp Reviews"]
-        S4["Internal Customer Surveys"]
-        S5["Synthetic Review Generator"]
+    subgraph Sources["1. Ingestion Sources"]
+        S1["Apple App Store API"]
+        S2["Google Play Store API"]
+        S3["Chrome Web Store API"]
+        S4["Google Maps / Places"]
+        S5["Trustpilot & Public Feeds"]
+        S6["CSV Batch Uploader"]
     end
 
-    subgraph Ingestion["Ingestion Layer & Broker"]
-        API["FastAPI Ingestion Endpoint\nPOST /api/v1/reviews"]
+    subgraph IngestionLayer["2. Ingestion & Broker Layer"]
+        API["FastAPI Ingestion Gateway<br/>POST /api/v1/reviews"]
+        PII["PII Redaction & Normalizer"]
         PROD["Kafka Event Producer"]
-        K1["Kafka Topic:\nreview.created"]
+        K_CREATED["Topic: review.created"]
     end
 
-    subgraph StreamWorkers["Asynchronous Workers"]
-        CONS1["Review Processing Consumer"]
-        LLM_AGENT["Review Analysis Agent\n(Structured Extraction)"]
-        EMBED_AGENT["Embedding Generator\n(1536-dim Vectors)"]
-        K2["Kafka Topic:\nreview.analyzed"]
+    subgraph StreamingWorkers["3. Async Stream Processing"]
+        CONS["Stream Consumer Worker"]
+        ANALYZER["AI Structured Analysis Agent"]
+        EMBED["1536-dim Embedding Engine"]
+        K_ANALYZED["Topic: review.analyzed"]
     end
 
-    subgraph Persistence["Storage & Vector Search"]
-        PG[("PostgreSQL 16")]
-        VEC[("pgvector\nCosine / HNSW Index")]
+    subgraph StorageLayer["4. Unified Persistence"]
+        PG[("PostgreSQL 16 (Relational DB)")]
+        VEC[("pgvector Extension<br/>HNSW Cosine Index")]
     end
 
-    subgraph AnalyticalEngines["Analytics & Intelligence Engines"]
-        CLUST["Semantic Clustering Engine\n(DBSCAN / HDBSCAN)"]
-        TREND["Trend & Velocity Detector\n(4-Week Baseline vs WoW Change)"]
-        INVEST["Root Cause / Investigation Agent\n(Evidence vs Hypothesis Separation)"]
-        ROUTE["Configurable Team Routing Engine\n(Rules & DB Mapping)"]
+    subgraph AnalyticsEngines["5. Analytics & Statistical Engines"]
+        CLUST["Unsupervised Clustering Engine<br/>(DBSCAN / HDBSCAN)"]
+        TREND["Velocity Surge Detector<br/>(Rolling 4-wk Baseline, z >= 2.0)"]
+        K_ALERT["Topic: issue.detected"]
     end
 
-    subgraph HITL["Human-in-the-Loop Workflow"]
+    subgraph AgenticCore["6. LangGraph Multi-Agent Orchestration"]
+        LG_START(["Cluster Ingest"]) --> LG_EVID["Evidence Gatherer"]
+        LG_EVID --> LG_HYPO["Root Cause Hypothesis Agent"]
+        LG_HYPO --> LG_PLAN["Remediation Action Planner"]
+        LG_PLAN --> LG_ROUTE["Department Router"]
+    end
+
+    subgraph GovernanceQueue["7. Governance & HITL Subsystem"]
         QUEUE["Pending Recommendations Queue"]
-        REVIEWER{"Domain Reviewer / Analyst\n(Approve / Reject / Edit)"}
-        AUDIT[("Audit Log & Decisions")]
+        ANALYST{"Lead Operations Analyst<br/>(Approve / Modify / Reject)"}
+        AUDIT[("Governance Audit Trail")]
     end
 
-    subgraph Delivery["Delivery & Presentation"]
-        SCHED["Scheduled Weekly Intelligence Reporter"]
-        REP_STORE[("Weekly Reports DB")]
-        DASHBOARD["React 18 + Vite + Tailwind Dashboard"]
+    subgraph OutputSurfaces["8. Delivery & User Surfaces"]
+        REPORTER["Weekly Executive Intelligence Reporter"]
+        K_REPORT["Topic: report.generated"]
+        DASHBOARD["React 18 + Vite 3D Visual Console"]
     end
 
     Sources --> API
-    API --> PROD
-    PROD --> K1
-    K1 --> CONS1
-    CONS1 --> LLM_AGENT
-    LLM_AGENT --> EMBED_AGENT
-    EMBED_AGENT --> K2
-    K2 --> PG
-    EMBED_AGENT --> VEC
+    API --> PII
+    PII --> PROD
+    PROD --> K_CREATED
+    K_CREATED --> CONS
+    CONS --> ANALYZER
+    ANALYZER --> EMBED
+    EMBED --> K_ANALYZED
+    K_ANALYZED --> PG
+    EMBED --> VEC
 
     PG & VEC --> CLUST
     CLUST --> TREND
-    TREND --> INVEST
-    INVEST --> ROUTE
-    ROUTE --> QUEUE
+    TREND --> K_ALERT
+    K_ALERT --> AgenticCore
 
-    QUEUE --> REVIEWER
-    REVIEWER --> AUDIT
-    AUDIT --> SCHED
-    SCHED --> REP_STORE
-    REP_STORE & PG --> DASHBOARD
+    AgenticCore --> QUEUE
+    QUEUE --> ANALYST
+    ANALYST --> AUDIT
+    AUDIT --> REPORTER
+    REPORTER --> K_REPORT
+    PG & AUDIT & REPORTER --> DASHBOARD
 ```
 
 ---
 
-## 3. Core Component Descriptions
-
-### 3.1 Review Ingestion Layer
-* Ingests feedback from multi-channel sources (App Store, Play Store, Google, Yelp, Internal).
-* Assigns unique UUIDs, source metadata, timestamps, and customer identifiers.
-* Publishes to `review.created` Kafka topic asynchronously with low latency.
-
-### 3.2 Review Analysis Agent
-* Evaluates raw text and extracts structured JSON:
-  * Sentiment (`positive`, `neutral`, `negative`)
-  * Sentiment Score (float from `-1.0` to `+1.0`)
-  * Product (`Mobile Banking`, `Credit Cards`, `ATMs`, `Branch Operations`, `Rewards`, etc.)
-  * Category (`authentication`, `transaction_failure`, `fee_dispute`, `ui_ux`, etc.)
-  * Specific Issue (`session_expiration`, `biometric_login_failure`, `statement_error`, etc.)
-  * Severity (`critical`, `high`, `medium`, `low`)
-  * Customer Intent (`complete_payment`, `inquire_balance`, `dispute_charge`, etc.)
-  * Confidence Score (`0.0` to `1.0`)
-* Strictly validated via Pydantic schemas.
-
-### 3.3 Vector Embeddings & pgvector Storage
-* Converts review semantics into dense 1536-dimensional embeddings.
-* Persisted in PostgreSQL using the `pgvector` extension.
-* Indexed using HNSW (Hierarchical Navigable Small World) for sub-millisecond approximate nearest neighbor (ANN) cosine similarity search.
-
-### 3.4 Semantic Clustering Engine
-* Periodically groups semantically coherent complaints regardless of superficial phrasing differences.
-* Computes cluster centroids, member cardinality, sentiment distributions, and representative reviews.
-
-### 3.5 Trend & Velocity Detection Engine
-* Calculates statistical metrics comparing current periods against a 4-week rolling baseline:
-  * Absolute volume & negative percentage
-  * Week-over-Week (WoW) percentage change
-  * Trend direction (`emerging`, `stable`, `improving`)
-  * Anomaly z-score
-* Flags sudden surges (e.g. `+43%` week-over-week authentication complaints) as emerging issues.
-
-### 3.6 Root Cause & Investigation Agent
-* Synthesizes cluster members and generates structured operational hypotheses.
-* **Non-Negotiable Principle:** Hard separation between **Observed Evidence** ("Customers report biometric timeout on iOS v4.2") and **Hypothesis** ("Authentication backend changes may warrant investigation"). Never states unverified guesses as confirmed facts.
-
-### 3.7 Team Routing Engine
-* Configurable database-backed routing table.
-* Dynamically routes issues to generic enterprise teams:
-  * Authentication / App Bugs $\rightarrow$ **Digital Engineering**
-  * Wire / Card Processing $\rightarrow$ **Payments Operations**
-  * Points / Cashback disputes $\rightarrow$ **Rewards Product Team**
-  * Teller / Branch physical experience $\rightarrow$ **Branch Operations**
-  * Support wait times / agent demeanor $\rightarrow$ **Customer Experience**
-
-### 3.8 Human-in-the-Loop (HITL) Approval Workflow
-* AI insights are queued for human review.
-* Analysts can Approve, Reject, or Edit proposed recommendations and add commentary.
-* Establishes a verifiable audit trail for enterprise governance.
-
-### 3.9 Weekly Intelligence Reporter
-* Scheduled aggregation engine generating comprehensive executive briefs:
-  * Executive Summary & overall sentiment trajectory
-  * Top Emerging Issues (with review count, trend %, representative quotes, suggested actions)
-  * Improving Issues (areas of successful resolution)
-  * Geographic anomaly breakdowns
-
-### 3.10 Modern React Dashboard
-* Responsive single-page application built with React, Vite, TypeScript, Tailwind CSS, and Recharts.
-* Real-time metrics, cluster explorers, review search filters, trend charts, and the approval queue.
-
----
-
-## 4. End-to-End Data Flow
+## 3. End-to-End Execution Flow (Sequence Diagram)
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Customer as Customer / Synthetic Generator
-    participant API as Ingestion API (FastAPI)
+    actor Client as Client / Scraper / Webhook
+    participant Ingestion as Ingestion API (FastAPI)
     participant Kafka as Apache Kafka Broker
-    participant Worker as Analysis Worker
-    participant LLM as LLM Agent (OpenAI/Mock)
+    participant Worker as Stream Worker
+    participant Analyzer as AI Analysis & Embedding Service
     participant DB as PostgreSQL + pgvector
-    participant Trend as Trend & Clustering Engine
-    participant HITL as Approval Queue (Analyst)
-    participant UI as React Dashboard
+    participant Analytics as Clustering & Trend Engine
+    participant LangGraph as LangGraph Multi-Agent State Machine
+    participant HITL as Governance Approval Queue
+    participant ReportSvc as Executive Report Service
+    participant UI as React 3D Dashboard
 
-    Customer->>API: POST /api/v1/reviews (Raw Feedback)
-    API->>Kafka: Publish to 'review.created'
-    API-->>Customer: HTTP 202 Accepted {id, status: "queued"}
+    Client->>Ingestion: POST /api/v1/reviews (Raw Review Payload)
+    Ingestion->>Ingestion: Mask PII (credit cards, phone, email) & normalize taxonomy
+    Ingestion->>Kafka: Publish event 'review.created'
+    Ingestion-->>Client: HTTP 202 Accepted {review_id, status: "queued"}
 
-    Kafka->>Worker: Consume 'review.created' event
-    Worker->>LLM: Analyze Sentiment, Product, Category, Severity
-    LLM-->>Worker: Structured Analysis JSON
-    Worker->>Worker: Generate 1536-dim Embedding Vector
-    Worker->>DB: Store Review + Analysis + pgvector record
-    Worker->>Kafka: Publish to 'review.analyzed'
+    Kafka->>Worker: Consume 'review.created'
+    Worker->>Analyzer: Extract Sentiment, Category, Severity & Generate 1536-dim Embedding
+    Analyzer-->>Worker: Validated Analysis Pydantic Model + 1536-dim Vector
+    Worker->>DB: INSERT into reviews, review_analyses, and pgvector embeddings
+    Worker->>Kafka: Publish event 'review.analyzed'
 
-    loop Hourly / Scheduled Batch
-        Trend->>DB: Query Recent Vectors & Aggregate
-        Trend->>Trend: Run DBSCAN / Semantic Clustering
-        Trend->>Trend: Compute 4-Week Rolling Baseline & WoW Delta
-        Trend->>DB: Persist Clusters & Emerging Trend Flags
-        Trend->>HITL: Create Pending Recommendation for Reviewer
+    loop Scheduled / Triggered Anomaly Surveillance
+        Analytics->>DB: Query Recent Review Vectors
+        Analytics->>Analytics: Run DBSCAN Unsupervised Clustering
+        Analytics->>Analytics: Calculate 4-Week Rolling Baseline & Z-Score Velocity ($z \ge 2.0$)
+        Analytics->>DB: UPSERT issue_clusters & trend_metrics
+        Analytics->>Kafka: Publish event 'issue.detected' (if $z \ge 2.0$ or WoW $\ge +25\%$)
     end
 
-    HITL->>UI: View Proposed Insights in Approval Queue
-    UI->>HITL: Analyst Submits Approval / Edits
-    HITL->>DB: Record Approved Insight & Audit Log
-    DB->>UI: Render Live Metrics, Cluster Trees, and Reports
+    Kafka->>LangGraph: Trigger Root Cause Graph for Detected Anomaly
+    LangGraph->>LangGraph: Node 1: Ingest & Normalize Cluster Telemetry
+    LangGraph->>LangGraph: Node 2: Extract Verbatim Customer Quotes (Ground Truth)
+    LangGraph->>LangGraph: Node 3: Synthesize Technical Root-Cause Hypothesis
+    LangGraph->>LangGraph: Node 4: Generate Concrete Engineering Action Steps
+    LangGraph->>LangGraph: Node 5: Match Team Queue & Default SLA
+    LangGraph->>DB: INSERT into recommendations (status: 'pending_approval')
+
+    UI->>HITL: Operator inspects Evidence vs. Hypothesis in Dashboard
+    HITL->>DB: POST /api/v1/recommendations/{id}/approve (Record Decision & Audit Log)
+    DB->>ReportSvc: Compile Approved Issues into Weekly Intelligence Brief
+    ReportSvc->>Kafka: Publish event 'report.generated'
+    DB->>UI: Stream live telemetry, 3D radar metrics, and department workloads
 ```
 
 ---
 
-## 5. Technology Stack Rationale
+## 4. Component Subsystem Specifications
 
-| Layer | Technology | Rationale |
-|---|---|---|
-| **API Backend** | Python 3.10+ & FastAPI | High-performance asynchronous runtime, native Pydantic schema validation, automatic OpenAPI / Swagger generation. |
-| **Relational & Vector DB** | PostgreSQL 16 + pgvector | Eliminates duplicate database infrastructure by combining ACID transactional data, relational foreign keys, and high-performance vector search in a single engine. |
-| **Event Streaming** | Apache Kafka (KRaft mode) | Enterprise standard for distributed, durable, decoupled event streaming; provides at-least-once delivery and consumer scaling. |
-| **AI Extraction & Reasoning** | Pydantic + LLM Agents (OpenAI/Local) | Guaranteed structured JSON schemas, strict validation, deterministic output enforcement, zero-shot entity extraction. |
-| **Embeddings & Similarity** | 1536-dimensional Cosine Embeddings | Captures subtle semantic nuance across varied customer vernacular ("WiFi cuts out" vs "Cafe internet dropped"). |
-| **Clustering & Trend Math** | Scikit-learn, NumPy, Pandas | Battle-tested numerical stability, deterministic statistical baselines, and parameterizable clustering algorithms. |
-| **Frontend UI** | React 18, TypeScript, Tailwind CSS, Vite | Type-safe, component-driven, lightning-fast HMR dev experience, clean modular enterprise styling. |
-| **Infrastructure** | Docker, Docker Compose, Kubernetes | Portable containerized workloads matching 12-factor cloud standards for AWS/GCP deployments. |
+### 4.1 Ingestion & Normalization Subsystem
+* **Service:** [`IngestionService`](file:///Users/saurabhjadhav5172gmail.com/Workspace/AI/Customer-Voice-AI/backend/app/services/ingestion_service.py)
+* **Taxonomy Normalization:** Uses exact and fuzzy regex matching to resolve colloquial user phrasing to canonical product IDs (`c1_mobile_ios`, `venture_x`, `c1_cafe`, `c1_360_checking`, `shopping_extension`).
+* **PII Redaction Pipeline:**
+  - Credit Card Numbers: Luhn-validated 13-16 digit sequences replaced with `[REDACTED_CARD]`.
+  - Phone Numbers: US/International telephone patterns replaced with `[REDACTED_PHONE]`.
+  - Email Addresses: Standard RFC 5322 regex matches replaced with `[REDACTED_EMAIL]`.
+
+### 4.2 Event Streaming & Kafka Broker
+* **Service:** [`KafkaProducerService`](file:///Users/saurabhjadhav5172gmail.com/Workspace/AI/Customer-Voice-AI/backend/app/kafka/producer.py)
+* **Broker Protocol:** Apache Kafka in KRaft mode (no Zookeeper dependency).
+* **Guarantees:** At-least-once delivery with partition key partitioning based on `product_id` for ordered downstream processing.
+* **Transparent Degradation:** When `KAFKA_BOOTSTRAP_SERVERS` is unreachable, `_fallback_queue` buffers events in-memory, enabling seamless local developer execution.
+
+### 4.3 Structured AI Analysis Engine
+* **Service:** [`AnalysisService`](file:///Users/saurabhjadhav5172gmail.com/Workspace/AI/Customer-Voice-AI/backend/app/services/analysis_service.py)
+* **LLM Model:** OpenAI GPT-4o / GPT-4o-mini with deterministic fallback to `MockAnalysisAgent` in CI environments.
+* **Schema Contract:** Validated through Pydantic models:
+  ```python
+  class ReviewAnalysisCreate(BaseModel):
+      sentiment: Literal["positive", "neutral", "negative"]
+      sentiment_score: float = Field(ge=-1.0, le=1.0)
+      category: str
+      specific_issue: str
+      severity: Literal["low", "medium", "high", "critical"]
+      customer_intent: str
+      confidence: float = Field(ge=0.0, le=1.0)
+  ```
+
+### 4.4 Vector Embedding & Similarity Search
+* **Service:** [`EmbeddingService`](file:///Users/saurabhjadhav5172gmail.com/Workspace/AI/Customer-Voice-AI/backend/app/services/embedding_service.py)
+* **Vector Dimension:** 1536 floats (OpenAI `text-embedding-3-small` standard).
+* **Storage & Indexing:** PostgreSQL 16 `pgvector` extension with HNSW index:
+  ```sql
+  CREATE INDEX idx_review_embeddings_hnsw 
+  ON review_embeddings 
+  USING hnsw (embedding vector_cosine_ops)
+  WITH (m = 16, ef_construction = 64);
+  ```
+
+### 4.5 Unsupervised Semantic Clustering Engine
+* **Service:** [`ClusteringService`](file:///Users/saurabhjadhav5172gmail.com/Workspace/AI/Customer-Voice-AI/backend/app/services/clustering_service.py)
+* **Algorithm:** Density-Based Spatial Clustering of Applications with Noise (DBSCAN) using precomputed cosine distance matrices.
+* **Key Properties:**
+  - Discovers arbitrarily shaped clusters without requiring a pre-specified cluster count ($k$).
+  - Automatically isolates outliers (`label = -1`) as transient noise.
+  - Computes cluster centroids, negative sentiment ratios, and representative customer quotes.
+
+### 4.6 Statistical Velocity Surge Anomaly Detector
+* **Service:** [`TrendService`](file:///Users/saurabhjadhav5172gmail.com/Workspace/AI/Customer-Voice-AI/backend/app/services/trend_service.py)
+* **Mathematical Baseline Model:**
+  1. Computes rolling volume mean ($\mu$) and standard deviation ($\sigma$) over four historical 7-day windows ($W_{-4} \dots W_{-1}$).
+  2. Evaluates standard score for current window ($W_0$):
+     $$z = \frac{V_{\text{current}} - \mu}{\sigma + \epsilon}$$
+  3. Classification Thresholds:
+     - **`emerging`:** $V_{\text{current}} \ge 3$ AND ($z \ge 2.0$ OR $\text{WoW \%} \ge +25\%$).
+     - **`improving`:** $V_{\text{previous}} \ge 3$ AND $\text{WoW \%} \le -25\%$.
+     - **`stable`:** Steady-state baseline.
+
+### 4.7 LangGraph Multi-Agent Root Cause State Machine
+* **Service:** [`InvestigationService`](file:///Users/saurabhjadhav5172gmail.com/Workspace/AI/Customer-Voice-AI/backend/app/services/investigation_service.py)
+* **Graph Architecture:**
+  ```
+  (Start) ──> [Ingest Telemetry] ──> [Synthesize Evidence]
+                                              │
+  (End)   <── [Route to Team]    <── [Generate Hypothesis & Action]
+  ```
+* **State Contract:** Strictly enforces schema separation between verbatim quotes (`observed_evidence`), technical theories (`investigation_hypothesis`), and concrete engineering tasks (`recommended_action`).
+
+### 4.8 Deterministic Enterprise Team Routing Engine
+* **Service:** [`RoutingEngine`](file:///Users/saurabhjadhav5172gmail.com/Workspace/AI/Customer-Voice-AI/backend/app/services/routing_engine.py)
+* **Department Queues & Default SLAs:**
+  - `digital_engineering_mobile` (P1 — 24h SLA)
+  - `payments_operations` (P2 — 48h SLA)
+  - `travel_lounges_product` (P2 — 48h SLA)
+  - `cafe_operations` (P3 — 72h SLA)
+  - `digital_ai_security` (P2 — 48h SLA)
+  - `shopping_engineering` (P3 — 72h SLA)
+  - `customer_experience` (Intelligent Fallback)
+
+### 4.9 Governance & Human-in-the-Loop (HITL) Subsystem
+* **Service:** [`HITLService`](file:///Users/saurabhjadhav5172gmail.com/Workspace/AI/Customer-Voice-AI/backend/app/services/hitl_service.py)
+* **Security Principle:** Automated recommendations remain in `pending_approval` state until a human operator signs off.
+* **Audit Lineage:** Every decision persists operator ID, decision type (`approved`, `rejected`, `modified`), timestamp, and modification diff.
+
+### 4.10 Executive Intelligence Reporting Engine
+* **Service:** [`ReportService`](file:///Users/saurabhjadhav5172gmail.com/Workspace/AI/Customer-Voice-AI/backend/app/services/report_service.py)
+* **Outputs:** Deterministic HTML reports, publication-ready GitHub-flavored Markdown briefs, and structured JSON payloads for downstream data warehouse ingestion.
+
+---
+
+## 5. Security & Responsible AI Architecture
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                        RESPONSIBLE AI BOUNDARY                         │
+├───────────────────────────────────┬────────────────────────────────────┤
+│     OBSERVED CUSTOMER EVIDENCE    │      INVESTIGATION HYPOTHESIS      │
+│          (Ground Truth)           │         (Tentative Theory)         │
+├───────────────────────────────────┼────────────────────────────────────┤
+│ • Direct, unedited quotes         │ • Technical potential explanations │
+│ • App store version metadata      │ • Upstream dependency checks       │
+│ • Quantified complaint counts     │ • Suggested diagnostic paths       │
+│ • "Customers report biometric     │ • "Investigate whether upstream    │
+│    failure on iOS v6.14.0"        │    FaceID API timeout increased"   │
+└───────────────────────────────────┴────────────────────────────────────┘
+```
+
+1. **Strict Evidence vs. Hypothesis Separation:** Guarantees that AI-generated hypotheses are never labeled as established software defects.
+2. **PII Scrubbing at Boundary:** Eliminates customer identifiers prior to embedding or LLM evaluation.
+3. **Deterministic Seed Control:** Synthetic test data generators use deterministic RNG seeds for reproducible test runs.
+
+---
+
+## 6. Technology Stack & Architectural Decision Records (ADRs)
+
+| Decision Area | Selected Technology | Alternative Evaluated | Selection Rationale |
+| :--- | :--- | :--- | :--- |
+| **API Runtime** | **FastAPI (Python 3.10+)** | Flask / Django / Express | Asynchronous ASGI runtime, native Pydantic v2 validation, automatic OpenAPI doc generation. |
+| **Persistence** | **PostgreSQL 16 + pgvector** | Pinecone / Qdrant + MongoDB | Single engine eliminates data synchronization bugs between transactional records and vector indexes. |
+| **Event Broker** | **Apache Kafka (KRaft)** | RabbitMQ / AWS SQS | Replayability, durable log retention, and high-throughput partition consumer group scaling. |
+| **Agent Framework**| **LangGraph** | AutoGen / CrewAI | State-machine graph formulation with deterministic transitions and native human-in-the-loop interruption. |
+| **Clustering** | **Scikit-learn DBSCAN** | K-Means / Agglomerative | Unsupervised clustering without prior knowledge of $k$; isolates noise points automatically. |
+| **Frontend** | **React 18 + Vite + Tailwind** | Next.js / Vue | Fast client-side SPA rendering with rapid HMR and lightweight bundle deployment. |
+
+---
+
+*Document maintained at `docs/architecture.md` • VoiceIQ Platform*
