@@ -1,0 +1,81 @@
+{
+  "evaluated_at": "2026-09-29T01:18:17.151641Z",
+  "sample_size": 200,
+  "sentiment_accuracy": 1.0,
+  "sentiment_macro_f1": 1.0,
+  "category_accuracy": 0.835,
+  "severity_adjacent_accuracy": 0.875,
+  "responsible_ai_compliance_rate": 1.0,
+  "team_routing_accuracy": 1.0,
+  "overall_status": "PASSED",
+  "sentiment_details": {
+    "total_samples": 200,
+    "accuracy": 1.0,
+    "macro_f1": 1.0,
+    "weighted_f1": 1.0,
+    "class_metrics": {
+      "positive": {
+        "label": "positive",
+        "support": 88,
+        "true_positives": 88,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      },
+      "neutral": {
+        "label": "neutral",
+        "support": 28,
+        "true_positives": 28,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      },
+      "negative": {
+        "label": "negative",
+        "support": 84,
+        "true_positives": 84,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      }
+    },
+    "confusion_matrix": {
+      "positive": {
+        "positive": 88,
+        "neutral": 0,
+        "negative": 0
+      },
+      "neutral": {
+        "positive": 0,
+        "neutral": 28,
+        "negative": 0
+      },
+      "negative": {
+        "positive": 0,
+        "neutral": 0,
+        "negative": 84
+      }
+    }
+  },
+  "responsible_ai_details": {
+    "total_hypotheses_evaluated": 4,
+    "compliant_hypotheses_count": 4,
+    "violating_hypotheses_count": 0,
+    "compliance_rate": 1.0,
+    "prohibited_phrase_detections": {},
+    "tentative_framing_rate": 1.0,
+    "status": "PASSED"
+  },
+  "routing_details": {
+    "total_routed": 6,
+    "correctly_routed": 6,
+    "routing_accuracy": 1.0,
+    "mismatches": []
+  }
+}
