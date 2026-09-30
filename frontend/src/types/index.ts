@@ -1,5 +1,5 @@
 /**
- * TypeScript type definitions for Customer Voice AI Frontend.
+ * TypeScript type definitions for VoiceIQ Frontend.
  * Synchronized with backend Pydantic DTO contracts.
  */
 

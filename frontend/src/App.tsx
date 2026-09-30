@@ -155,7 +155,7 @@ export const App: React.FC = () => {
       <footer className="border-t border-[#1B365D]/60 bg-[#040B16]/90 backdrop-blur-md py-6 text-xs text-slate-500 relative z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p>
-            Customer Voice AI Platform • Independent Public Intelligence System
+            VoiceIQ Platform • Independent Public Intelligence System
           </p>
           <p className="text-[11px] text-slate-500">
             Strict Separation between Observed Customer Evidence and Engineering Hypotheses.

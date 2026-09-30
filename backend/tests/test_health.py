@@ -20,7 +20,7 @@ def test_health_liveness(client: TestClient):
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "healthy"
-    assert data["app"] == "Customer Voice AI"
+    assert data["app"] == "VoiceIQ"
     assert "timestamp" in data
     assert "environment" in data
 

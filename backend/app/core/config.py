@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     """Global application settings and environment variables."""
 
     # Application
-    APP_NAME: str = "Customer Voice AI"
+    APP_NAME: str = "VoiceIQ"
     ORGANIZATION_NAME: str = "Capital One"
     APP_VERSION: str = "0.1.0"
     ENVIRONMENT: str = "development"

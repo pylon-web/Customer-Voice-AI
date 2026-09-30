@@ -6,7 +6,7 @@ from app.core.config import Settings
 def test_settings_default_values():
     """Verify default configuration values meet platform standards."""
     cfg = Settings()
-    assert cfg.APP_NAME == "Customer Voice AI"
+    assert cfg.APP_NAME == "VoiceIQ"
     assert cfg.API_V1_STR == "/api/v1"
     assert cfg.EMBEDDING_DIMENSION == 1536
     assert cfg.TREND_BASELINE_WEEKS == 4

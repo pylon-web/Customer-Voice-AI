@@ -85,7 +85,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
               <span className="text-slate-300 font-mono">19 Catalog Products</span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight drop-shadow-md">
-              Customer Voice <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#38BDF8] via-sky-300 to-[#7DD3FC]">Executive Intelligence</span>
+              Voice<span className="text-[#38BDF8]">IQ</span> <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#38BDF8] via-sky-300 to-[#7DD3FC]">Executive Intelligence Radar</span>
             </h2>
             <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
               Multi-channel public intelligence console across 5 platforms with automated vector DBSCAN clustering, statistical z-score velocity surveillance, and LangGraph root cause investigation.

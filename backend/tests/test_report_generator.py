@@ -119,7 +119,7 @@ async def test_weekly_report_generation_and_kafka_event():
         assert report.total_reviews >= 15
         assert report.negative_pct >= 60.0
         assert report.emerging_issues_count >= 1
-        assert "Customer Voice AI platform analyzed" in report.executive_summary
+        assert "VoiceIQ platform analyzed" in report.executive_summary
 
         # 5. Verify Geographic Insights
         assert "Austin, TX" in report.geographic_insights

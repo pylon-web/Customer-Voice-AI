@@ -114,7 +114,7 @@ async def test_full_benchmark_scorecard_and_markdown():
 
     # Verify Markdown rendering
     md = scorecard.to_markdown()
-    assert "# Customer Voice AI — Model Quality & Compliance Benchmark" in md
+    assert "# VoiceIQ — Model Quality & Compliance Benchmark" in md
     assert "Sentiment Accuracy" in md
     assert "Responsible AI Guardrail" in md
     assert "PASSED" in md

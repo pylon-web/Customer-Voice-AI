@@ -79,7 +79,7 @@ class AIQualityScorecard(BaseModel):
     def to_markdown(self) -> str:
         """Render evaluation scorecard as executive GitHub-flavored markdown."""
         md = []
-        md.append("# Customer Voice AI — Model Quality & Compliance Benchmark")
+        md.append("# VoiceIQ — Model Quality & Compliance Benchmark")
         md.append(f"\n**Evaluated At:** {self.evaluated_at.strftime('%Y-%m-%d %H:%M:%S UTC')}  ")
         md.append(f"**Sample Size:** {self.sample_size:,} reviews  ")
         md.append(f"**Overall Status:** `{'PASSED' if self.overall_status == 'PASSED' else 'FAILED'}`\n")

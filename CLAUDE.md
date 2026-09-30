@@ -1,12 +1,12 @@
-# Customer Voice AI — Development Master Instructions
+# VoiceIQ — Development Master Instructions
 
-This file serves as the single source of truth for AI assistants (Claude, Antigravity, Gemini, Cursor) working on **Customer Voice AI**.
+This file serves as the single source of truth for AI assistants (Claude, Antigravity, Gemini, Cursor) working on **VoiceIQ**.
 
 ---
 
 ## 1. Project Overview
 
-**Customer Voice AI** is an AI-powered Customer Voice Intelligence Platform tailored to **Capital One's publicly offered consumer products and platforms** (with configurable fallback to generic enterprise names e.g. Acme Financial).
+**VoiceIQ** is an AI-powered Customer Voice Intelligence Platform tailored to **Capital One's publicly offered consumer products and platforms** (with configurable fallback to generic enterprise names e.g. Acme Financial).
 
 The system transforms raw multi-platform reviews into evidence-backed, routed executive insights:
 $$\text{Review Ingestion} \rightarrow \text{AI Analysis} \rightarrow \text{Embedding} \rightarrow \text{Semantic Clustering} \rightarrow \text{Trend Detection} \rightarrow \text{Investigation} \rightarrow \text{Team Routing} \rightarrow \text{HITL Approval} \rightarrow \text{Weekly Report}$$

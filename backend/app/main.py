@@ -26,7 +26,7 @@ logger = get_logger("cva.main")
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan manager for startup and graceful shutdown."""
     logger.info(
-        "Starting Customer Voice AI service",
+        "Starting VoiceIQ service",
         version=settings.APP_VERSION,
         environment=settings.ENVIRONMENT,
         llm_provider=settings.LLM_PROVIDER,
@@ -39,7 +39,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     # Gracefully stop Kafka Producer
     await kafka_producer.stop()
-    logger.info("Shutting down Customer Voice AI service gracefully")
+    logger.info("Shutting down VoiceIQ service gracefully")
 
 
 def create_application() -> FastAPI:

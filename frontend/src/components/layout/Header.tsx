@@ -37,15 +37,15 @@ export const Header: React.FC<HeaderProps> = ({ health, loading, onRefresh }) =>
                   <span className="text-lg font-black tracking-tight text-white uppercase font-sans drop-shadow-sm">
                     Capital<span className="text-[#38BDF8] drop-shadow-[0_0_10px_rgba(56,189,248,0.5)]">One</span>
                   </span>
-                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#004879]/80 text-[#7DD3FC] border border-sky-400/50 font-bold tracking-wider shadow-sm">
-                    VOICE AI
+                  <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-gradient-to-r from-[#004879] to-[#0076BE] text-white border border-sky-400/60 font-black tracking-wider shadow-[0_0_12px_rgba(56,189,248,0.4)]">
+                    VOICE<span className="text-[#38BDF8]">IQ</span>
                   </span>
                   <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-800/90 text-slate-300 font-mono hidden sm:inline border border-slate-700">
                     3D Console
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-400 hidden sm:block">
-                  Enterprise Customer Intelligence • What's In Your Wallet?
+                  VoiceIQ Enterprise Intelligence • Real-Time Product Anomaly Radar
                 </p>
               </div>
             </div>
